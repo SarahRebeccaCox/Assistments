@@ -1,6 +1,12 @@
+#######
+#SETUP#
+#######
+
+
 data <- read.csv("skill_builder_data_corrected.csv")
 
 names(data)
+
 
 #replace blanks with a value in first_action column
 for (i in 1:nrow(data)){
@@ -21,51 +27,71 @@ for (i in 1:nrow(data)){
 data <- subset(data, select=-c(order_id,
                      position, #"position" doesn't exist in codebook
                      type, #"type" is the same in every row
-                     skill_id, #skill_id and skill_name are identical
+                     skill_name, #skill_id and skill_name are identical
                      answer_id, #only exists for multiple choice, some blanks mean incorrect mult choice answers though.
                                 #also probably not relevant
                      answer_text #probably not relevant
                      )) 
 
-#this may not have been the best choice
-###################################################################################################
+#############################
+#convert all data to numeric#
+#############################
+
+#first, transform all factors to actual factors
 data.numbered <- transform(data, 
-                                assignment_id = factor(as.numeric(factor(assignment_id))),
-                                user_id = factor(as.numeric(factor(user_id))),
-                                assistment_id = factor(as.numeric(factor(assistment_id))),
-                                problem_id = factor(as.numeric(factor(problem_id))),
+                                assignment_id = factor(assignment_id),
+                                user_id = factor(user_id),
+                                assistment_id = factor(assistment_id),
+                                problem_id = factor(problem_id),
                                 tutor_mode = factor(as.numeric(factor(tutor_mode))),
                                 answer_type = factor(as.numeric(factor(answer_type))),
                                 sequence_id = factor(sequence_id),
-                                student_class_id = factor(as.numeric(factor(student_class_id))),
+                                student_class_id = factor(student_class_id),
                                 base_sequence_id = factor(base_sequence_id),
-                                skill_name = factor(as.numeric(factor(skill_name))),
-                                teacher_id = factor(as.numeric(factor(teacher_id))),
-                                school_id = factor(as.numeric(factor(school_id))),
-                                template_id = factor(as.numeric(factor(template_id))),
-                                first_action = factor(as.numeric(factor(first_action))),
-                                bottom_hint =factor( as.numeric(factor(bottom_hint)))
-                             
+                                skill_id = factor(skill_id),
+                                teacher_id = factor(teacher_id),
+                                school_id = factor(school_id),
+                                template_id = factor(template_id),
+                                first_action = factor(first_action)
 )
+
+#then create indicator vars for each factor
+model.matrix(~., data=data.numbered)[,-1]
+#R crash :(
+
+
+
+####thoughts
+#multilevel logistic regression?
+library(nlme)
+
+lfa.mod.1 <- lme(fixed = LFA~Group+Emotion,
+                 random=~1|Patient,
+                 data=data, 
+                 na.action=na.omit,
+                 method="ML")
+
+
+### OR use all vars to predict how long it takes a student to master a skill
+### that is, predict max(opportunity) for each student/skill
+
+##sort: by student, by skill, max opportunity
 ###################################################################################################
 
-data.numbered$hint_percent <- data$hint_count/data$hint_total
 
-
-#is it better to have a bunch of binary vars for each level of every column?
-
-#DV should be a measure of performance, of course. maybe predicting how well a student performs in one skill as a function of performance in other skills?
-#still figuring out how to reshape the data to properly do this
-
-
-#only box and whisker skill data
-box.and.whisker <- data[data$skill_name=="Box and Whisker",]
 
 #get success rate for each student
 library(plyr)
-test <- ddply(box.and.whisker,.(assignment_id,user_id),summarize,percent_correct=sum(correct)/length(user_id),number=length(user_id))
+test <- ddply(box.and.whisker,
+              .(assignment_id,user_id),
+              summarize,
+              percent_correct=sum(correct)/length(user_id),
+              number=length(user_id))
+
+#a start but not able to get quite what I think I want
 
 
-#####WORKING ON REFORMATTING DATA TO GET SOMETHING USEABLE FOR PREDICTION.
-######TRYING TO PREDICT PERCENT OF QUESTIONS CORRECT
+
+
+
 ######DATA EXPLANATION AT https://sites.google.com/site/assistmentsdata/how-to-interpret
