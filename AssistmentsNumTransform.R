@@ -15,24 +15,26 @@ for (i in 1:nrow(data)){
   }
 }
 
-#same for bottom_hint column
-for (i in 1:nrow(data)){
-  if (is.na(data$bottom_hint[i]==TRUE)){
-    data$bottom_hint[i] <- 2 #2 means student did not ask for final hint
-  }
-}
+
+data$hint_percent <- data$hint_count/data$hint_total
 
 #drop immediately useless columns
-
 data <- subset(data, select=-c(order_id,
                      position, #"position" doesn't exist in codebook
                      type, #"type" is the same in every row
                      skill_name, #skill_id and skill_name are identical
                      answer_id, #only exists for multiple choice, some blanks mean incorrect mult choice answers though.
                                 #also probably not relevant
-                     answer_text #probably not relevant
+                     answer_text, #probably not relevant
+                     bottom_hint, #not necessary with hint_percent
+                     base_sequence_id,
+                     hint_count,
+                     hint_total,
+                     overlap_time
                      )) 
 
+
+write.csv(data,"cleanerData.csv")
 #############################
 #convert all data to numeric#
 #############################
@@ -52,11 +54,12 @@ data.numbered <- transform(data,
                                 teacher_id = factor(teacher_id),
                                 school_id = factor(school_id),
                                 template_id = factor(template_id),
-                                first_action = factor(first_action)
+                                first_action = factor(first_action),
+                                opportunity_original = as.numeric(opportunity_original)
 )
 
 #then create indicator vars for each factor
-model.matrix(~., data=data.numbered)[,-1]
+numbered <p model.matrix(~., data=data.numbered)[,-1]
 #R crash :(
 
 
@@ -65,11 +68,11 @@ model.matrix(~., data=data.numbered)[,-1]
 #multilevel logistic regression?
 library(nlme)
 
-lfa.mod.1 <- lme(fixed = LFA~Group+Emotion,
-                 random=~1|Patient,
-                 data=data, 
-                 na.action=na.omit,
-                 method="ML")
+#lfa.mod.1 <- lme(fixed = LFA~Group+Emotion,
+#                 random=~1|Patient,
+#                 data=data, 
+#                 na.action=na.omit,
+#                 method="ML")
 
 
 ### OR use all vars to predict how long it takes a student to master a skill
@@ -89,7 +92,6 @@ test <- ddply(box.and.whisker,
               number=length(user_id))
 
 #a start but not able to get quite what I think I want
-
 
 
 
