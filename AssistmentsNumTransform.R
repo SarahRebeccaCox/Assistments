@@ -15,8 +15,11 @@ for (i in 1:nrow(data)){
   }
 }
 
-
+#hint percent is more meaningful than number of hints
 data$hint_percent <- data$hint_count/data$hint_total
+
+#only keep data in tutor mode
+data <- data[data$tutor_mode == "tutor",]
 
 #drop immediately useless columns
 data <- subset(data, select=-c(order_id,
@@ -30,7 +33,9 @@ data <- subset(data, select=-c(order_id,
                      base_sequence_id,
                      hint_count,
                      hint_total,
-                     overlap_time
+                     overlap_time,
+                     tutor_mode,
+                     opportunity_original
                      )) 
 
 
