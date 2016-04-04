@@ -99,7 +99,7 @@ learning.curve <- function(skill.id){
 }
 
 
-
+ 
 unique(data$skill_id) #see the list of skill ID's
 
 learning.curve(1) #plot for skill 1
