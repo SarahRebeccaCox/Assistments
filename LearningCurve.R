@@ -1,5 +1,6 @@
 data <- read.csv("cleanerData.csv")
 sort(data)
+library(ggplot2)
 
 length(unique(data$skill_id))
 
@@ -21,7 +22,7 @@ split.by.skill <- function(skill.id){
 learning.curve <- function(skill.id){
   
   x <- assign(paste0("skill",as.character(skill.id)),split.by.skill(skill.id)) #skill-specific dataframe
-
+  
   #create new data frame for visualizing
   learning.curve.df <- data.frame(matrix(c(0,0,0,0,0,0),2,3))
   names(learning.curve.df) <- c("Student.ID","Attempts.to.Correct","Try.Number")
@@ -84,9 +85,9 @@ learning.curve <- function(skill.id){
     }
   }
   
-
+  
   ###Visualization
-
+  
   plot <- ggplot(learning.curve.df, aes(Try.Number, Attempts.to.Correct,colour=Student.ID)) + 
     geom_line(aes(group = Student.ID)) + 
     geom_point() + 
@@ -94,17 +95,66 @@ learning.curve <- function(skill.id){
     labs(x="Try Number") +
     labs(y="Questions Wrong Before a Correct")
   
-  return(plot)
-
+  
+  
+  ###
+  #MEAN CORRECTED
+  ###
+  
+  
+  learning.curve.df$Mean <- 0
+  for (i in 1:nrow(learning.curve.df)){ 
+    
+    #FOR THE FIRST ROW
+    if (i == 1){ 
+      sum <- learning.curve.df$Attempts.to.Correct[i]
+      n <- 1
+      learning.curve.df$Mean[i] <- sum/n
+      next
+    }
+    
+    #FOR NEW USERS
+    if (learning.curve.df$Student.ID[i] != learning.curve.df$Student.ID[i-1]){ #if it's a new user
+      sum <- learning.curve.df$Attempts.to.Correct[i]
+      n <- 1 #reset the count
+      learning.curve.df$Mean[i] <- sum/n
+    }
+    
+    
+    #FOR RETURNING USERS
+    if (learning.curve.df$Student.ID[i] == learning.curve.df$Student.ID[i-1]){ #if it's a returning user
+      sum <- sum + learning.curve.df$Attempts.to.Correct[i]
+      n <- n + 1 
+      learning.curve.df$Mean[i] <- sum/n
+    }
+  } #end of loop
+  
+  
+  #VISUALIZATION 
+  plot2 <- ggplot(learning.curve.df, aes(Try.Number, Mean,colour=Student.ID)) + 
+    geom_line(aes(group = Student.ID)) + 
+    geom_point() + 
+    labs(title=paste0("Skill ",as.character(skill.id),", Mean Smoothed")) +
+    labs(x="Try Number") +
+    labs(y="Questions Wrong Before a Correct")
+  
+  return(list(df=learning.curve.df,plot=plot2))
+  
 }
 
 
- 
+
 unique(data$skill_id) #see the list of skill ID's
 
-learning.curve(1) #plot for skill 1
-learning.curve(2) #etc
-learning.curve(4)
+skill1 <- learning.curve(1)
+skill2 <- learning.curve(2)
+skill4 <- learning.curve(4)
+skill5 <- learning.curve(5)
+skill8 <- learning.curve(8)
+
+
+
+
 
 
 
