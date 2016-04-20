@@ -106,9 +106,9 @@ learning.curve <- function(skill.id){
   }
   
 
-  ######################################
-  #MEAN CORRECTED AND OTHER INFORMATION#
-  ######################################
+  ###############
+  #MEAN CORRECTN#
+  ###############
   
   
   learning.curve.df$Mean <- 0
@@ -173,12 +173,84 @@ skill4 <- learning.curve(4)
 skill5 <- learning.curve(5)
 skill8 <- learning.curve(8)
 
+##### Time and First Action are recorded each time a student asnwers a question correctly.
+##### Not all information about time to answer questiosn and first action is contained in this dataset
+
+#########################################
+#FURTHER RESHAPING, ONE LINE PER STUDENT#
+#########################################
+
+data.for.glm <- function(dataframe){
+  
+  #####INITIALIZE A DATAFRAME
+  
+  glm.df <- data.frame(matrix(0,length(unique(dataframe$Student.ID)),ncol(dataframe)))
+  names(glm.df) <- names(dataframe)
+  names(glm.df)[9] <- "Sum.of.Attempts"
+  
+  glm.df.row <- 1 #initialize row
+  for (i in 1:nrow(dataframe)){ 
+    
+    #FOR THE FIRST ROW
+    if (i == 1){ 
+      glm.df$Student.ID[glm.df.row] <- dataframe$Student.ID[i]
+      glm.df$Class.ID[glm.df.row] <- dataframe$Class.ID[i]
+      glm.df$Teacher.ID[glm.df.row] <- dataframe$Teacher.ID[i]
+      glm.df$School.ID[glm.df.row] <- dataframe$School.ID[i]
+      glm.df$Time[glm.df.row] <- dataframe$Time[i]
+      glm.df$First.Action[glm.df.row] <- dataframe$First.Action[i]
+      sum <- dataframe$Attempts.to.Correct[i]
+      
+      glm.df.row <- glm.df.row + 1
+      next
+    }
+    
+    #FOR NEW USERS
+    if (dataframe$Student.ID[i] != dataframe$Student.ID[i-1]){ #if it's a new user
+      
+      #record sum for student above
+      glm.df$Sum.of.Attempts[glm.df.row-1] <- sum
+      
+      #reset the sum
+      sum <- dataframe$Attempts.to.Correct[i]
+      
+      #add other identifying information
+      glm.df$Student.ID[glm.df.row] <- dataframe$Student.ID[i]
+      glm.df$Class.ID[glm.df.row] <- dataframe$Class.ID[i]
+      glm.df$Teacher.ID[glm.df.row] <- dataframe$Teacher.ID[i]
+      glm.df$School.ID[glm.df.row] <- dataframe$School.ID[i]
+      glm.df$Time[glm.df.row] <- dataframe$Time[i]
+      glm.df$First.Action[glm.df.row] <- dataframe$First.Action[i]
+      
+     
+      
+      #IF LAST ROW
+      if (i == nrow(dataframe)){
+        glm.df$Sum.of.Attempts[glm.df.row] <- sum
+      }
+      
+      glm.df.row <- glm.df.row + 1
+    } #end of loop
+    
+    #FOR RETURNING USERS
+    if (dataframe$Student.ID[i] == dataframe$Student.ID[i-1]){ #if it's the same user
+      
+      #add to sum
+      sum <- sum + dataframe$Attempts.to.Correct[i]
+      
+      #IF LAST ROW
+      if (i == nrow(dataframe)){
+        glm.df$Sum.of.Attempts[glm.df.row] <- sum
+      }      
+    }
+  } 
+  return(glm.df)
+}
 
 
 
-
-
-
+a <- skill1$df
+b <- data.for.glm(a)
 
 
 
